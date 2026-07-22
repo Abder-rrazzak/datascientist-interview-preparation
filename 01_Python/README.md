@@ -38,6 +38,3 @@ Pour chaque chapitre :
 * Questions d'entretien
 * Réponses attendues
 * Pièges fréquents
-
-
-Pièges fréquents
