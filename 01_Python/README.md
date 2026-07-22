@@ -13,25 +13,31 @@
 
 ---
 
-# Plan du Module 1
-Révision complète de Python
-Structures de données
-Programmation orientée objet
-Pandas (débutant → avancé)
-NumPy
-Manipulation de dates
-Nettoyage de données
-Gestion des valeurs manquantes
-Vectorisation
-Bonnes pratiques de codage
-Logging
-Gestion des exceptions
-Organisation d'un projet Python
+### Plan du Module 1
+
+
+* Révision complète de Python
+* Structures de données
+* Programmation orientée objet
+* Pandas (débutant → avancé)
+* NumPy
+* Manipulation de dates
+* Nettoyage de données
+* Gestion des valeurs manquantes
+* Vectorisation
+* Bonnes pratiques de codage
+* Logging
+* Gestion des exceptions
+* Organisation d'un projet Python
+
 Pour chaque chapitre :
 
-Explications détaillées
-Exemples de code
-Exercices corrigés
-Questions d'entretien
-Réponses attendues
+* Explications détaillées
+* Exemples de code
+* Exercices corrigés
+* Questions d'entretien
+* Réponses attendues
+* Pièges fréquents
+
+
 Pièges fréquents
