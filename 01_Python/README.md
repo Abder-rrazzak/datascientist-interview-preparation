@@ -13,7 +13,7 @@
 
 ---
 
-# Plan du Module
+# Plan du Module 1
 Révision complète de Python
 Structures de données
 Programmation orientée objet
@@ -27,7 +27,6 @@ Bonnes pratiques de codage
 Logging
 Gestion des exceptions
 Organisation d'un projet Python
-
 Pour chaque chapitre :
 
 Explications détaillées
