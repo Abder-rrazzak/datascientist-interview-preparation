@@ -1,7 +1,3 @@
-Excellente idée. Nous allons travailler comme dans un **bootcamp de préparation aux entretiens**. L'objectif n'est pas seulement d'apprendre Python, mais de pouvoir **répondre avec assurance aux questions techniques**, **écrire du code propre** et **résoudre des problèmes de Data Science**.
-
----
-
 # Module 1 – Python pour la Data Science et les entretiens
 
 ## Objectifs
