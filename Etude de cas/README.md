@@ -4,7 +4,7 @@ Nous allons maintenant réaliser une **étude de cas complète**, très proche d
 
 ---
 
-# MODULE 4 – Chapitre 9 : Étude de cas complète – Construction d'un système de détection de fraude
+# MODULE 4 : Étude de cas complète – Construction d'un système de détection de fraude
 
 ## Contexte
 
