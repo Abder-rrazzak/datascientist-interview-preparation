@@ -1,0 +1,972 @@
+On passe au **MODULE 17 — AWS pour un entretien Data Scientist**, mais avec une approche orientée **architecture ML / fraude temps réel**, exactement dans l'esprit du poste.
+
+# MODULE 17 — AWS : ce qu'il faut vraiment savoir en entretien
+
+L'objectif n'est pas de connaître 50 services AWS par cœur.
+
+Vous devez surtout être capable de répondre à :
+
+> **Pourquoi ce service ? Pourquoi pas un autre ? Où le placer dans une architecture ML ?**
+
+---
+
+# 1. S3 — Data Lake
+
+## À quoi sert S3 ?
+
+S3 est un stockage objet très scalable.
+
+Dans un projet Data Science, on peut y stocker :
+
+```text
+raw data
+processed data
+training datasets
+features historiques
+model artifacts
+logs
+exports
+```
+
+Architecture :
+
+```text
+Transactions
+      ↓
+    Kafka
+      ↓
+     S3
+      ↓
+Training Dataset
+      ↓
+Machine Learning
+```
+
+### Question d'entretien
+
+> **Why would you use S3 for a fraud detection system?**
+
+### Réponse
+
+> I would use S3 as a durable and scalable data lake for storing raw transactions, historical datasets, training data and model artifacts. It would also provide a reliable source for offline analytics and model retraining.
+
+---
+
+# 2. S3 vs EBS vs EFS
+
+Question très fréquente.
+
+| Service | Utilisation              |
+| ------- | ------------------------ |
+| **S3**  | Object storage           |
+| **EBS** | Disque attaché à une EC2 |
+| **EFS** | File system partagé      |
+
+### Exemple
+
+```text
+S3
+→ dataset historique
+
+EBS
+→ disque d'une instance EC2
+
+EFS
+→ plusieurs instances accèdent aux mêmes fichiers
+```
+
+### Question
+
+> **Where would you store a 5 TB historical dataset?**
+
+Réponse :
+
+> S3, because it is designed for scalable object storage and is well suited for data lakes.
+
+---
+
+# 3. EC2
+
+EC2 fournit des machines virtuelles.
+
+Exemple :
+
+```text
+EC2
+ ├── Python
+ ├── FastAPI
+ ├── XGBoost
+ └── Docker
+```
+
+Vous avez beaucoup de contrôle :
+
+* CPU ;
+* RAM ;
+* OS ;
+* réseau ;
+* GPU ;
+* librairies.
+
+Mais vous devez gérer davantage d'infrastructure.
+
+---
+
+# 4. EC2 vs Lambda
+
+Question classique :
+
+> **When would you use Lambda instead of EC2?**
+
+### Lambda
+
+Bon pour :
+
+* fonctions courtes ;
+* événements ;
+* traitements serverless ;
+* workloads variables ;
+* orchestration légère.
+
+### EC2
+
+Bon pour :
+
+* contrôle complet ;
+* applications persistantes ;
+* workloads spécialisés ;
+* GPU ;
+* besoins réseau spécifiques.
+
+### Pour un modèle ML
+
+Si vous avez :
+
+```text
+petite fonction
+faible dépendance
+execution courte
+```
+
+Lambda peut convenir.
+
+Mais pour un service ML permanent avec des dépendances importantes :
+
+```text
+FastAPI
++
+XGBoost
++
+custom libraries
++
+persistent service
+```
+
+EC2/ECS peut être plus approprié.
+
+---
+
+# 5. ECS
+
+ECS = **Elastic Container Service**.
+
+Vous avez une application :
+
+```text
+fraud-service
+```
+
+dans un Docker container :
+
+```dockerfile
+FROM python:3.12
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY app/ /app/
+
+CMD ["python", "/app/main.py"]
+```
+
+Puis AWS exécute plusieurs containers :
+
+```text
+           Load Balancer
+                 │
+       ┌─────────┼─────────┐
+       ▼         ▼         ▼
+   Container Container Container
+      #1         #2         #3
+```
+
+---
+
+# 6. ECS vs EKS
+
+Très bonne question d'entretien.
+
+### ECS
+
+AWS-managed container orchestration.
+
+Plus simple.
+
+### EKS
+
+Kubernetes managé.
+
+Plus puissant mais plus complexe.
+
+### Réponse orale
+
+> **I would prefer ECS if the organization doesn't require Kubernetes-specific capabilities, because it reduces operational complexity. I would consider EKS when Kubernetes portability, ecosystem integration or advanced orchestration requirements justify the additional complexity.**
+
+⭐ Très bonne réponse.
+
+---
+
+# 7. RDS
+
+RDS fournit des bases relationnelles managées.
+
+Par exemple :
+
+```text
+PostgreSQL
+```
+
+Pour SentiLink :
+
+```text
+RDS PostgreSQL
+       │
+       ├── customers
+       ├── transactions
+       └── metadata
+```
+
+RDS est pratique parce qu'AWS gère une partie de :
+
+* backups ;
+* patching ;
+* maintenance ;
+* réplication selon la configuration ;
+* haute disponibilité selon le setup.
+
+---
+
+# 8. RDS vs Redshift
+
+À connaître absolument.
+
+### RDS
+
+OLTP :
+
+```text
+INSERT
+UPDATE
+DELETE
+SELECT
+```
+
+Applications transactionnelles.
+
+### Redshift
+
+OLAP :
+
+```text
+Analytics
+Aggregations
+Large-scale reporting
+```
+
+Exemple :
+
+```text
+RDS
+→ récupérer le profil d'un client
+
+Redshift
+→ analyser 5 milliards de transactions
+```
+
+---
+
+# 9. ElastiCache / Redis
+
+Pour la fraude temps réel, c'est particulièrement intéressant.
+
+Architecture :
+
+```text
+Transaction
+     ↓
+Fraud API
+     ↓
+Redis
+     ↓
+Features
+```
+
+Exemple :
+
+```text
+transactions_last_10min = 7
+amount_last_1h = 850 €
+unique_devices_24h = 3
+```
+
+---
+
+# 10. Question d'entretien
+
+> **Why wouldn't you calculate these features directly from PostgreSQL?**
+
+### Réponse
+
+> Because querying and aggregating large amounts of transactional data synchronously for every request could introduce significant latency and create a bottleneck. I would precompute or incrementally maintain frequently used real-time features and store them in a low-latency system such as Redis.
+
+---
+
+# 11. API Gateway
+
+API Gateway peut être placé devant votre application.
+
+```text
+Client
+   ↓
+API Gateway
+   ↓
+Application
+```
+
+Il peut gérer notamment :
+
+* API exposure ;
+* authentication/authorization selon architecture ;
+* throttling ;
+* monitoring ;
+* routing.
+
+---
+
+# 12. Load Balancer
+
+Le Load Balancer distribue les requêtes.
+
+```text
+                   Load Balancer
+                 /       |       \
+                /        |        \
+              API1      API2      API3
+```
+
+Cela permet de répartir la charge.
+
+---
+
+# 13. API Gateway vs Load Balancer
+
+Question classique.
+
+Ils ne jouent pas exactement le même rôle.
+
+### API Gateway
+
+Plutôt au niveau :
+
+```text
+API management
+```
+
+### Load Balancer
+
+Plutôt :
+
+```text
+Traffic distribution
+```
+
+Architecture possible :
+
+```text
+Client
+  ↓
+API Gateway
+  ↓
+Load Balancer
+  ↓
+ECS
+```
+
+---
+
+# 14. CloudWatch
+
+CloudWatch est central pour le monitoring AWS.
+
+Vous pouvez surveiller :
+
+```text
+CPU
+Memory
+Latency
+Requests
+Errors
+Logs
+```
+
+Pour notre système :
+
+```text
+CloudWatch
+     │
+     ├── API latency
+     ├── HTTP 5xx
+     ├── CPU
+     ├── Memory
+     └── Throughput
+```
+
+---
+
+# 15. Attention : CloudWatch ≠ Model Monitoring complet
+
+Question intéressante.
+
+CloudWatch peut surveiller l'infrastructure.
+
+Mais pour le modèle, vous voulez également :
+
+```text
+Prediction distribution
+Feature drift
+Precision
+Recall
+PR-AUC
+False positive rate
+Business KPIs
+```
+
+Donc :
+
+```text
+Infrastructure monitoring
+        +
+Data monitoring
+        +
+Model monitoring
+        +
+Business monitoring
+```
+
+---
+
+# 16. IAM
+
+IAM contrôle :
+
+> **Who can access what?**
+
+Exemple :
+
+```text
+Fraud API
+   ↓
+IAM Role
+   ↓
+Read S3
+```
+
+Mais l'API ne devrait pas avoir :
+
+```text
+AdministratorAccess
+```
+
+juste parce que c'est pratique.
+
+Il faut appliquer :
+
+> **Principle of Least Privilege**
+
+---
+
+# 17. Question d'entretien
+
+> **How would you secure access from an EC2 instance to S3?**
+
+Mauvaise réponse :
+
+> Store AWS access keys in the Python code.
+
+❌
+
+Meilleure réponse :
+
+> I would assign an IAM role to the EC2 instance and grant only the required S3 permissions.
+
+---
+
+# 18. VPC
+
+VPC permet de définir un réseau isolé.
+
+Exemple :
+
+```text
+                   Internet
+                      │
+                      ▼
+                Load Balancer
+                      │
+             Public Subnet
+                      │
+                      ▼
+              Private Subnet
+             ┌────────┴────────┐
+             ▼                 ▼
+          Fraud API          Redis
+             │
+             ▼
+          PostgreSQL
+```
+
+Une architecture sécurisée évite généralement d'exposer directement :
+
+```text
+Database
+Redis
+internal services
+```
+
+à Internet.
+
+---
+
+# 19. Security Groups
+
+Un Security Group fonctionne comme un firewall au niveau des ressources.
+
+Exemple :
+
+```text
+Internet
+   ↓
+Load Balancer : 443
+   ↓
+Fraud API : 8000
+   ↓
+PostgreSQL : 5432
+```
+
+On autorise uniquement les flux nécessaires.
+
+---
+
+# 20. SQS
+
+SQS est une file de messages.
+
+Exemple :
+
+```text
+Fraud API
+    ↓
+   SQS
+    ↓
+Worker
+```
+
+Très utile lorsque le traitement n'a pas besoin d'être synchrone.
+
+Par exemple :
+
+```text
+Fraud decision
+     ↓
+Response immediately
+
+     +
+     
+SQS
+     ↓
+Send notification
+     ↓
+Audit
+```
+
+---
+
+# 21. SQS vs Kafka
+
+Il faut savoir faire la différence.
+
+### SQS
+
+Message queue managée.
+
+Très pratique pour :
+
+```text
+decoupling
+background jobs
+async processing
+```
+
+### Kafka
+
+Event streaming.
+
+Très adapté à :
+
+```text
+high-throughput event streams
+multiple consumers
+event replay
+stream processing
+```
+
+### Réponse d'entretien
+
+> **I would use SQS when I primarily need a managed queue for asynchronous work. I would prefer Kafka when I need a high-throughput event streaming platform with multiple consumers, replay capabilities and stream-processing use cases.**
+
+---
+
+# 22. SageMaker
+
+SageMaker est la plateforme AWS orientée Machine Learning.
+
+Elle peut couvrir :
+
+```text
+Training
+Experimentation
+Deployment
+Inference
+Monitoring
+Model management
+```
+
+Mais attention :
+
+> Vous n'êtes pas obligé d'utiliser SageMaker simplement parce que vous êtes sur AWS.
+
+Vous pouvez très bien construire :
+
+```text
+S3
++
+EC2/ECS
++
+Docker
++
+MLflow
++
+FastAPI
+```
+
+---
+
+# 23. SageMaker vs ECS
+
+### SageMaker
+
+Très intéressant lorsque vous voulez une plateforme ML managée.
+
+### ECS
+
+Très intéressant lorsque vous voulez contrôler le déploiement de votre application containerisée.
+
+Si vous avez :
+
+```text
+FastAPI
++
+custom inference logic
++
+XGBoost
++
+business rules
+```
+
+ECS peut être très naturel.
+
+---
+
+# 24. Question d'entretien
+
+> **Would you deploy the model directly inside the application or as a separate service?**
+
+Il n'existe pas une seule bonne réponse.
+
+Pour un modèle très léger :
+
+```text
+FastAPI
+   ↓
+Model
+```
+
+peut être parfaitement acceptable.
+
+Pour une architecture plus complexe :
+
+```text
+FastAPI
+   ↓
+Model Service
+```
+
+peut permettre :
+
+* indépendance du déploiement ;
+* scaling indépendant ;
+* plusieurs modèles ;
+* versioning ;
+* isolation des dépendances.
+
+---
+
+# 25. Architecture AWS complète
+
+Voici l'architecture que vous devez maintenant savoir expliquer :
+
+```text
+                         Internet
+                            │
+                            ▼
+                     ┌─────────────┐
+                     │ API Gateway │
+                     └──────┬──────┘
+                            │
+                            ▼
+                     ┌─────────────┐
+                     │ Load Balancer│
+                     └──────┬──────┘
+                            │
+                ┌───────────┼───────────┐
+                ▼           ▼           ▼
+              ECS #1      ECS #2      ECS #3
+                │           │           │
+                └───────────┼───────────┘
+                            │
+                     ┌──────▼──────┐
+                     │    Redis    │
+                     │ ElastiCache │
+                     └──────┬──────┘
+                            │
+                            ▼
+                      Fraud Model
+                            │
+                            ▼
+                    Decision Engine
+                            │
+                            ▼
+                         Response
+
+
+             ASYNCHRONOUS DATA PIPELINE
+             
+                     Transaction
+                          │
+                          ▼
+                        Kafka
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+            Flink        S3        Monitoring
+              │           │
+              ▼           ▼
+           Features    Training
+                          │
+                          ▼
+                       MLflow
+                          │
+                          ▼
+                    Model Registry
+```
+
+---
+
+# 26. Question très importante : que se passe-t-il si le modèle tombe ?
+
+Le recruteur demande :
+
+> **What happens if the ML model becomes unavailable?**
+
+Vous ne devez pas répondre :
+
+> "The system crashes."
+
+Vous devez réfléchir à un **fallback**.
+
+Par exemple :
+
+```text
+Request
+   ↓
+Model available?
+   │
+ ┌─┴───────┐
+YES       NO
+ │         │
+ ▼         ▼
+Model    Rules
+ │         │
+ └────┬────┘
+      ▼
+ Decision
+```
+
+Le fallback peut utiliser :
+
+* règles simples ;
+* modèle précédent ;
+* score par défaut ;
+* manual review.
+
+Le choix dépend du niveau de risque acceptable.
+
+---
+
+# 27. Question encore plus avancée
+
+> **What if Redis is unavailable?**
+
+Vous pouvez avoir :
+
+```text
+Redis
+  ↓
+Primary Feature Store
+```
+
+et :
+
+```text
+Fallback
+  ↓
+cached features
+  ↓
+default values
+  ↓
+rules
+```
+
+Mais attention :
+
+**mettre arbitrairement des valeurs par défaut peut modifier la distribution des features et dégrader le modèle.**
+
+Il faut donc tester le comportement du système en mode dégradé.
+
+---
+
+# 28. Chaos Engineering
+
+Pour un système critique, vous pouvez volontairement tester :
+
+```text
+Redis failure
+Kafka failure
+Model service failure
+Database latency
+Network latency
+```
+
+et vérifier :
+
+> **Does the system still behave safely?**
+
+C'est une excellente notion à connaître.
+
+---
+
+# 29. Question AWS extrêmement probable
+
+> **How would you make your fraud detection API highly available?**
+
+### Réponse modèle
+
+> I would deploy multiple instances of the service across availability zones behind a load balancer. I would make the application stateless so instances can be added or removed horizontally. I would also monitor latency and error rates and use autoscaling based on workload. For stateful components, I would use managed highly available services where appropriate and design explicit fallback mechanisms for critical dependencies.
+
+---
+
+# 30. Les 12 réponses AWS à mémoriser
+
+| Question        | Réponse courte                      |
+| --------------- | ----------------------------------- |
+| S3 ?            | Data lake / object storage          |
+| EC2 ?           | Virtual machines                    |
+| ECS ?           | Container orchestration             |
+| EKS ?           | Managed Kubernetes                  |
+| Lambda ?        | Serverless functions                |
+| RDS ?           | Managed relational database         |
+| Redshift ?      | Data warehouse                      |
+| Redis ?         | Low-latency cache / real-time state |
+| API Gateway ?   | API management                      |
+| Load Balancer ? | Traffic distribution                |
+| CloudWatch ?    | Infrastructure/log monitoring       |
+| IAM ?           | Access control                      |
+
+---
+
+# 🧠 Niveau entretien : les comparaisons essentielles
+
+Vous devez être capable d'expliquer rapidement :
+
+```text
+S3 vs EBS
+S3 vs EFS
+
+RDS vs Redshift
+
+EC2 vs Lambda
+EC2 vs ECS
+ECS vs EKS
+
+SQS vs Kafka
+
+Redis vs PostgreSQL
+
+API Gateway vs Load Balancer
+
+CloudWatch vs ML Monitoring
+
+SageMaker vs ECS
+```
+
+Si vous savez faire ces comparaisons **avec un exemple concret de fraude**, vous êtes beaucoup mieux préparé qu'un candidat qui connaît uniquement les définitions.
+
+---
+
+# 🎯 Exercice d'entretien AWS
+
+Voici maintenant votre prochain exercice.
+
+### Question du recruteur
+
+> **You have a fraud detection API running on EC2. Traffic suddenly increases from 2,000 to 20,000 requests per second. Latency increases from 30 ms to 500 ms. What would you investigate first, and how would you redesign the system to handle the increased traffic?**
+
+### Votre réponse devrait aborder au minimum :
+
+```text
+1. Monitoring
+2. Bottleneck identification
+3. CPU / Memory
+4. Database
+5. Redis
+6. Network
+7. Horizontal scaling
+8. Load balancing
+9. Autoscaling
+10. Feature computation
+11. Model inference
+12. End-to-end latency
+```
+
+**Répondez comme en entretien en anglais.**
+
